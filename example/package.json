@@ -1,8 +1,12 @@
 {
   "name": "@hshoff/era-example",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.0.1",
   "license": "MIT",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "style.css"
+  ],
   "scripts": {
     "start": "parcel index.html",
     "build": "parcel build index.html"
