@@ -45,5 +45,8 @@
   },
   "dependencies": {
     "luxon": "^1.22.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
