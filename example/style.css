@@ -62,6 +62,34 @@ button:focus {
   background: var(--primary-bg);
 }
 
+.CalendarApp {
+  display: grid;
+  grid-template-columns: auto 250px;
+  background: var(--primary-bg);
+}
+
+.Calendar {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.CalendarSidebar {
+  position: relative;
+  border-left: 1px solid var(--primary-border);
+}
+
+.CalendarSidebar__content {
+  position: sticky;
+  top: 0;
+}
+
+.CalendarSidebar__content .MiniMonth {
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--primary-border);
+}
+
 .CalendarHeader {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -435,4 +463,51 @@ button:focus {
 .ButtonGroupOption--bordered {
   border-left: 1px solid var(--primary-bg);
   border-right: 1px solid var(--primary-bg);
+}
+
+.SettingsRow {
+  padding: 1rem;
+  border-bottom: 1px solid var(--primary-border);
+}
+
+.SettingsTitle {
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--primary-text);
+  user-select: none;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  cursor: pointer;
+}
+
+.SettingsTitle button {
+  background: transparent;
+  border: none;
+}
+
+.SettingsContent {
+  margin-top: 1rem;
+}
+
+.SettingsContent .ButtonGroup {
+  display: flex;
+}
+
+.Accent {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  font-size: 12px;
+}
+
+.Logo {
+  font-weight: 900;
+  transform: rotate(180deg);
+  display: inline-block;
+  text-decoration: none;
+  color: var(--primary-accent);
+  margin: 0;
+  font-size: 22px;
 }

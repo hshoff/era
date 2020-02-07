@@ -92,7 +92,15 @@ function CalendarNav({ interval, view, datetime, setDatetime }) {
 }
 
 function CalendarDay({ datetime, setDatetime, day }) {
-  const segments = day.splitBy(Duration.fromObject({ minutes: 30 }));
+  let segments = viewOfInterval(day.start, 'day').splitBy(
+    Duration.fromObject({ minutes: 30 })
+  );
+  // handle day light savings
+  if (segments.length !== 48) {
+    segments = viewOfInterval(day.start.minus({ days: 2 }), 'day').splitBy(
+      Duration.fromObject({ minutes: 30 })
+    );
+  }
   const dayName = formatWeekday({ day: day.start });
   const dayNumber = formatDayNumber({ day: day.start });
   const className = cx('Day', {
@@ -119,7 +127,14 @@ function CalendarTimeZones({ datetime }) {
     <>
       {['utc', 'local'].map(timezone => {
         const now = timezone === 'local' ? DateTime.local() : DateTime.utc();
-        const segments = splitByUnit(dayOf(datetime), 'hour');
+        let segments = splitByUnit(dayOf(DateTime.local()), 'hour');
+        // handle day light savings
+        if (segments.length !== 48) {
+          segments = splitByUnit(
+            dayOf(DateTime.local().minus({ days: 2 })),
+            'hour'
+          );
+        }
         return (
           <div key={timezone} className="CalendarTimeZone">
             <div className="DayHeader">
@@ -129,7 +144,7 @@ function CalendarTimeZones({ datetime }) {
               const time =
                 timezone === 'local' ? segment.start : segment.start.toUTC();
               return (
-                <div className="CalendarTimeZone__time">
+                <div key={time.toISO()} className="CalendarTimeZone__time">
                   {time.toLocaleString({
                     hour: 'numeric',
                     hour12: true,
@@ -226,6 +241,7 @@ function CalendarMiniMonth({
   month,
   datetime,
   setDatetime,
+  interval,
   spanMonths = false,
 }) {
   const days = splitByUnit(
@@ -244,7 +260,7 @@ function CalendarMiniMonth({
           const weekday = day.start.weekday;
           const isToday = day.contains(DateTime.local());
           const isPadded = day.start.month !== month.start.month;
-          const isInterval = day.contains(datetime);
+          const isInterval = interval.contains(day.start);
           const highlightDay = spanMonths
             ? isInterval
             : isInterval && !isPadded;
@@ -268,12 +284,10 @@ function CalendarMiniMonth({
                     isPadded && !highlightDay,
                   'MiniMonth__day-decoration--interval-start':
                     highlightDay &&
-                    datetime.startOf('day').equals(day.start.startOf('day')),
+                    interval.start.equals(day.start.startOf('day')),
                   'MiniMonth__day-decoration--interval-end':
                     highlightDay &&
-                    datetime
-                      .endOf('day')
-                      .hasSame(day.start.endOf('day'), 'day'),
+                    interval.end.hasSame(day.start.endOf('day'), 'day'),
                 })}
               >
                 {day.start.day}
@@ -287,13 +301,15 @@ function CalendarMiniMonth({
 }
 
 function CalendarYear({ datetime, setDatetime }) {
-  const months = splitByUnit(viewOfInterval(datetime, 'year'), 'months');
+  const interval = viewOfInterval(datetime, 'year');
+  const months = splitByUnit(interval, 'months');
   return (
     <div className="Year">
       {months.map(month => (
         <CalendarMiniMonth
           key={month.start.toISO()}
           month={month}
+          interval={viewOfInterval(datetime, 'day')}
           datetime={datetime}
           setDatetime={setDatetime}
         />
@@ -331,38 +347,57 @@ function CalendarApp() {
   const [state, set] = useCalendar(reducer, initialState);
   const { view, datetime, interval } = state;
   return (
-    <>
-      <div className="CalendarHeader">
-        <div className="CalendarHeader__title">
-          {view !== 'year' && (
-            <span className="CalendarHeader__title-month">
-              {datetime.toLocaleString({ month: 'long' })}
-            </span>
-          )}{' '}
-          <span>{datetime.year}</span>
+    <div className="CalendarApp">
+      <div className="Calendar">
+        <div className="CalendarHeader">
+          <div className="CalendarHeader__title">
+            {view !== 'year' && (
+              <span className="CalendarHeader__title-month">
+                {datetime.toLocaleString({ month: 'long' })}
+              </span>
+            )}{' '}
+            <span>{datetime.year}</span>
+          </div>
+          <CalendarViewSelect view={view} setView={set.view} />
+          <CalendarNav
+            interval={interval}
+            view={view}
+            datetime={datetime}
+            setDatetime={set.datetime}
+          />
         </div>
-        <CalendarViewSelect view={view} setView={set.view} />
-        <CalendarNav
-          interval={interval}
-          view={view}
-          datetime={datetime}
-          setDatetime={set.datetime}
-        />
+        {['day', 'week'].includes(view) && (
+          <CalendarDays
+            view={view}
+            datetime={datetime}
+            setDatetime={set.datetime}
+          />
+        )}
+        {view === 'month' && (
+          <CalendarMonth datetime={datetime} setDatetime={set.datetime} />
+        )}
+        {view === 'year' && (
+          <CalendarYear datetime={datetime} setDatetime={set.datetime} />
+        )}
       </div>
-      {['day', 'week'].includes(view) && (
-        <CalendarDays
-          view={view}
-          datetime={datetime}
-          setDatetime={set.datetime}
-        />
-      )}
-      {view === 'month' && (
-        <CalendarMonth datetime={datetime} setDatetime={set.datetime} />
-      )}
-      {view === 'year' && (
-        <CalendarYear datetime={datetime} setDatetime={set.datetime} />
-      )}
-    </>
+      <div className="CalendarSidebar">
+        <div className="CalendarSidebar__content">
+          {['day', 'week'].includes(view) && (
+            <CalendarMiniMonth
+              spanMonths
+              interval={interval}
+              datetime={datetime}
+              setDatetime={set.datetime}
+              month={Interval.fromDateTimes(
+                datetime.startOf('month'),
+                datetime.endOf('month')
+              )}
+            />
+          )}
+          <Settings />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -393,6 +428,118 @@ export function ButtonGroupOption({
     <button className={classnames} onClick={onClick}>
       {children}
     </button>
+  );
+}
+
+function Settings() {
+  return (
+    <div className="Settings">
+      <SettingsTheme />
+      <SettingsAccentColor />
+      <SettingsPanel title="Made By">
+        <a href="https://hshoff.dev" className="Logo">
+          SHOFFH
+        </a>
+      </SettingsPanel>
+    </div>
+  );
+}
+
+export function SettingsRow({ children, ...restProps }) {
+  return (
+    <div className="SettingsRow" {...restProps}>
+      {children}
+    </div>
+  );
+}
+
+export function SettingsTitle({ collapsed, children, ...restProps }) {
+  return (
+    <div className="SettingsTitle" {...restProps}>
+      <div>{children}</div>
+      <button>{collapsed ? '+' : '-'}</button>
+    </div>
+  );
+}
+
+export function SettingsContent({ children }) {
+  return <div className="SettingsContent">{children}</div>;
+}
+
+export function SettingsPanel({ title, children, defaultCollapse = false }) {
+  const [collapsed, setCollapsed] = React.useState(defaultCollapse);
+  function toggle() {
+    setCollapsed(!collapsed);
+  }
+  return (
+    <SettingsRow>
+      <SettingsTitle collapsed={collapsed} onClick={toggle}>
+        {title}
+      </SettingsTitle>
+      {!collapsed && <SettingsContent>{children}</SettingsContent>}
+    </SettingsRow>
+  );
+}
+
+export function SettingsTheme() {
+  const [active, setActive] = React.useState('light');
+
+  React.useEffect(() => {
+    document.body.className = active.toLowerCase();
+  }, [active]);
+
+  const themes = [
+    { label: 'Light', value: 'light' },
+    { label: 'Dark', value: 'dark' },
+  ];
+
+  return (
+    <SettingsPanel title="Theme" defaultCollapse={false}>
+      <ButtonGroup>
+        {themes.map(theme => {
+          const click = event => setActive(theme.value);
+          return (
+            <ButtonGroupOption
+              key={theme.value}
+              active={active === theme.value}
+              onClick={click}
+            >
+              {theme.label}
+            </ButtonGroupOption>
+          );
+        })}
+      </ButtonGroup>
+    </SettingsPanel>
+  );
+}
+
+export function SettingsAccentColor() {
+  const [accent, setAccent] = React.useState('#5251c0');
+
+  // read + set value on mount
+  React.useEffect(() => {
+    setAccent(
+      getComputedStyle(document.body).getPropertyValue('--primary-accent')
+    );
+  }, []);
+
+  // update variable value on accent change
+  React.useEffect(() => {
+    document.body.style.setProperty('--primary-accent', accent);
+  }, [accent]);
+
+  return (
+    <SettingsPanel title="Accent Color">
+      <div className="Accent">
+        <input
+          id="AccentColor"
+          type="color"
+          value={accent.trim()}
+          onChange={e => setAccent(e.target.value)}
+        />
+        <label htmlFor="AccentColor">{accent}</label>
+      </div>
+    </SettingsPanel>
   );
 }
 
