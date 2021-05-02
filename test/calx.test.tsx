@@ -86,9 +86,9 @@ describe('viewOfInterval()', () => {
   it('returns a month interval for month view', () => {
     const datetime = DateTime.fromObject({ year: 2019, month: 12, day: 30 });
     const interval = viewOfInterval(datetime, 'months');
-    expect(numUnit(interval, 'days')).toBe(31);
+    expect(numUnit(interval, 'days')).toBe(42);
     expect(interval.start.day).toBe(1);
-    expect(interval.end.day).toBe(31);
+    expect(interval.end.day).toBe(11);
   });
   it('returns a year interval for year view', () => {
     const datetime = DateTime.fromObject({ year: 2019, month: 12, day: 30 });
@@ -107,7 +107,7 @@ describe('viewOfDays()', () => {
   it('returns day intervals for view and datetime', () => {
     const datetime = DateTime.fromObject({ year: 2019, month: 12, day: 30 });
     const days = viewOfDays(datetime, 'month');
-    expect(days.length).toBe(31);
+    expect(days.length).toBe(42);
     expect(days[0].start.day).toBe(1);
     expect(days[30].start.day).toBe(31);
   });
