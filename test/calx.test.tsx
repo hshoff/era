@@ -83,12 +83,19 @@ describe('viewOfInterval()', () => {
     expect(interval.end.month).toBe(1);
     expect(interval.end.day).toBe(4);
   });
-  it('returns a month interval for month view', () => {
+  it('returns a month interval for month view (2019.12.30)', () => {
     const datetime = DateTime.fromObject({ year: 2019, month: 12, day: 30 });
     const interval = viewOfInterval(datetime, 'months');
     expect(numUnit(interval, 'days')).toBe(42);
     expect(interval.start.day).toBe(1);
     expect(interval.end.day).toBe(11);
+  });
+  it('returns a month interval for month view (2020.12.30)', () => {
+    const datetime = DateTime.fromObject({ year: 2020, month: 12, day: 30 });
+    const interval = viewOfInterval(datetime, 'months');
+    expect(numUnit(interval, 'days')).toBe(42);
+    expect(interval.start.day).toBe(29);
+    expect(interval.end.day).toBe(9);
   });
   it('returns a year interval for year view', () => {
     const datetime = DateTime.fromObject({ year: 2019, month: 12, day: 30 });
